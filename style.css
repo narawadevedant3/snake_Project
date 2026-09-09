@@ -517,21 +517,87 @@ body {
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-color);
+  background: rgba(8, 14, 26, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 999px;
-  padding: 4px 14px;
-  font-size: 0.7rem;
-  color: var(--text-muted);
+  padding: 5px 16px;
+  font-size: 0.72rem;
+  color: #34d399;
+  font-weight: 600;
   pointer-events: none;
-  opacity: 0.9;
-  transition: opacity 0.5s ease;
+  opacity: 0.95;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  white-space: nowrap;
 }
 
 .swipe-hint.hidden {
   opacity: 0;
+  transform: translate(-50%, 10px);
   pointer-events: none;
+}
+
+/* Touch Gesture Direction Indicator */
+.gesture-indicator {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.5) 0%, rgba(6, 182, 212, 0.2) 60%, transparent 100%);
+  border: 2px solid rgba(16, 185, 129, 0.8);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.15s ease-out, opacity 0.2s ease-out;
+  z-index: 6;
+}
+
+.gesture-indicator.hidden {
+  display: none;
+}
+
+/* Mobile Quick Bar */
+.mobile-quick-bar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.mobile-quick-btn {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.18s ease;
+  touch-action: manipulation;
+}
+
+.mobile-quick-btn:active {
+  transform: scale(0.95);
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--accent-primary);
+}
+
+.mobile-quick-btn.highlight {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
 }
 
 /* Touch D-Pad Controls */
@@ -540,21 +606,23 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 4px;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
 }
 
 .dpad-middle {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dpad-btn {
-  width: 58px;
-  height: 58px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  width: 64px;
+  height: 56px;
+  background: rgba(22, 30, 48, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
   color: var(--text-main);
   font-size: 1.4rem;
@@ -562,14 +630,19 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  touch-action: manipulation;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  touch-action: none;
+  transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.dpad-btn:active {
-  background: rgba(16, 185, 129, 0.25);
+.dpad-btn:active, .dpad-btn.pressed {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(6, 182, 212, 0.4));
   border-color: var(--accent-primary);
+  color: #ffffff;
   transform: scale(0.92);
+  box-shadow: 0 0 18px var(--accent-primary-glow);
 }
 
 .dpad-center {
@@ -578,8 +651,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  opacity: 0.4;
+  font-size: 1.1rem;
+  background: rgba(10, 14, 26, 0.6);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  opacity: 0.6;
 }
 
 /* Leaderboard Modal Card */
@@ -948,8 +1024,8 @@ kbd {
 
 @media (max-width: 680px) {
   .app-layout {
-    padding: 8px 10px;
-    gap: 8px;
+    padding: 8px;
+    gap: 10px;
     min-height: 100vh;
   }
 
@@ -959,7 +1035,7 @@ kbd {
   }
 
   .app-title {
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
 
   .app-subtitle {
@@ -972,17 +1048,18 @@ kbd {
   }
 
   .pill-btn {
-    padding: 4px 8px;
+    padding: 4px 10px;
     font-size: 0.72rem;
   }
 
   .stats-panel {
+    display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
   }
 
   .stat-card {
-    padding: 8px 6px;
+    padding: 8px 4px;
     border-radius: var(--radius-sm);
     text-align: center;
     align-items: center;
@@ -990,14 +1067,15 @@ kbd {
 
   .stat-label {
     font-size: 0.58rem;
+    letter-spacing: 0.2px;
   }
 
   .stat-value {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
   }
 
   .stat-max {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
   }
 
   .progress-bar-container {
@@ -1010,9 +1088,13 @@ kbd {
   }
 
   .canvas-wrapper {
-    max-width: min(92vw, 360px, 48vh);
+    max-width: min(94vw, 360px, 44vh);
     border-width: 1.5px;
     border-radius: var(--radius-md);
+  }
+
+  .mobile-quick-bar {
+    display: flex;
   }
 
   .touch-controls {
@@ -1022,42 +1104,34 @@ kbd {
   }
 
   .dpad-middle {
-    gap: 8px;
+    gap: 10px;
   }
 
   .dpad-btn {
-    width: 60px;
-    height: 52px;
-    font-size: 1.3rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-  }
-
-  .dpad-btn:active {
-    background: rgba(16, 185, 129, 0.35);
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 12px var(--accent-primary-glow);
+    width: 66px;
+    height: 54px;
+    font-size: 1.35rem;
+    border-radius: 14px;
   }
 
   .dpad-center {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.05rem;
   }
 
   .panel-section {
-    padding: 10px;
+    padding: 12px;
     gap: 8px;
   }
 
   .preset-speeds, .grid-presets {
-    gap: 4px;
+    gap: 6px;
   }
 
   .chip-btn, .grid-chip {
-    padding: 6px 2px;
-    font-size: 0.68rem;
+    padding: 7px 4px;
+    font-size: 0.72rem;
   }
 
   .app-footer {
@@ -1072,23 +1146,37 @@ kbd {
 
 @media (max-width: 380px) {
   .app-layout {
-    padding: 6px;
+    padding: 5px;
     gap: 6px;
   }
 
   .stats-panel {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
 
+  .stat-card {
+    padding: 6px 2px;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
   .canvas-wrapper {
-    max-width: min(94vw, 310px, 42vh);
+    max-width: min(96vw, 300px, 40vh);
   }
 
   .dpad-btn {
-    width: 52px;
-    height: 46px;
-    font-size: 1.1rem;
+    width: 58px;
+    height: 48px;
+    font-size: 1.2rem;
+    border-radius: 12px;
+  }
+
+  .mobile-quick-btn {
+    font-size: 0.65rem;
+    padding: 6px 3px;
   }
 }
 

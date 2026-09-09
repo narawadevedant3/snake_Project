@@ -149,10 +149,12 @@ class SnakeApp {
     this.sound = new SoundManager();
     this.particles = new ParticleSystem();
 
-    // Touch Swipe Tracking
+    // High-Sensitivity Touch Engine
     this.touchStartX = 0;
     this.touchStartY = 0;
-    this.swipeThreshold = 24;
+    this.touchActive = false;
+    this.sensitivityLevel = 'high'; // 'ultra' (6px), 'high' (10px), 'normal' (18px)
+    this.swipeThreshold = 10;
 
     // Canvas
     this.canvas = document.getElementById('gameCanvas');
@@ -204,6 +206,8 @@ class SnakeApp {
       toggleParticles: document.getElementById('toggleParticles'),
       pauseBanner: document.getElementById('pauseBanner'),
       swipeHint: document.getElementById('swipeHint'),
+      gestureIndicator: document.getElementById('gestureIndicator'),
+      canvasWrapper: document.getElementById('canvasWrapper'),
       gameOverModal: document.getElementById('gameOverModal'),
       modalIcon: document.getElementById('modalIcon'),
       modalTitle: document.getElementById('modalTitle'),
@@ -215,11 +219,21 @@ class SnakeApp {
       saveScoreForm: document.getElementById('saveScoreForm'),
       playerNameInput: document.getElementById('playerNameInput'),
       saveFeedback: document.getElementById('saveFeedback'),
+      // Mobile Quick Action Bar
+      mobilePauseBtn: document.getElementById('mobilePauseBtn'),
+      mobilePauseIcon: document.getElementById('mobilePauseIcon'),
+      mobilePauseLabel: document.getElementById('mobilePauseLabel'),
+      mobileRestartBtn: document.getElementById('mobileRestartBtn'),
+      mobileSpeedBtn: document.getElementById('mobileSpeedBtn'),
+      mobileSpeedLabel: document.getElementById('mobileSpeedLabel'),
+      mobileSensitivityBtn: document.getElementById('mobileSensitivityBtn'),
+      mobileSensitivityLabel: document.getElementById('mobileSensitivityLabel'),
       // D-Pad
       dpadUp: document.getElementById('dpadUp'),
       dpadDown: document.getElementById('dpadDown'),
       dpadLeft: document.getElementById('dpadLeft'),
       dpadRight: document.getElementById('dpadRight'),
+      dpadCenterBtn: document.getElementById('dpadCenterBtn'),
     };
   }
 
@@ -227,10 +241,11 @@ class SnakeApp {
     window.addEventListener('resize', () => this.resizeCanvas());
     window.addEventListener('keydown', (e) => this.handleKeyDown(e));
 
-    // Sound
+    // Sound Toggle
     this.dom.soundBtn.addEventListener('click', () => {
       const enabled = this.sound.toggle();
       this.dom.soundIcon.textContent = enabled ? '🔊' : '🔇';
+      this.triggerHaptic(15);
     });
 
     // Leaderboard Modal
@@ -254,14 +269,15 @@ class SnakeApp {
       this.submitScoreToDb();
     });
 
-    // Mode Switch
+    // Mode Switch Cards
     this.dom.modeCards.forEach((card) => {
       card.addEventListener('click', () => {
         this.setMode(card.dataset.mode);
+        this.triggerHaptic(12);
       });
     });
 
-    // Speed
+    // Speed Controls
     this.dom.speedSlider.addEventListener('input', (e) => {
       this.setSpeed(parseInt(e.target.value, 10));
     });
@@ -269,6 +285,7 @@ class SnakeApp {
     this.dom.speedChips.forEach((chip) => {
       chip.addEventListener('click', () => {
         this.setSpeed(parseInt(chip.dataset.speed, 10));
+        this.triggerHaptic(10);
       });
     });
 
@@ -276,10 +293,11 @@ class SnakeApp {
     this.dom.gridChips.forEach((chip) => {
       chip.addEventListener('click', () => {
         this.setGridSize(parseInt(chip.dataset.grid, 10));
+        this.triggerHaptic(15);
       });
     });
 
-    // Controls
+    // Main Control Buttons
     this.dom.pauseBtn.addEventListener('click', () => this.togglePause());
     this.dom.stepBtn.addEventListener('click', () => this.step());
     this.dom.restartBtn.addEventListener('click', () => this.restartGame());
@@ -287,6 +305,46 @@ class SnakeApp {
       this.dom.gameOverModal.classList.add('hidden');
       this.restartGame();
     });
+
+    // Mobile Quick Action Bar Events
+    if (this.dom.mobilePauseBtn) {
+      this.dom.mobilePauseBtn.addEventListener('click', () => {
+        this.togglePause();
+        this.triggerHaptic(12);
+      });
+    }
+
+    if (this.dom.mobileRestartBtn) {
+      this.dom.mobileRestartBtn.addEventListener('click', () => {
+        this.restartGame();
+        this.triggerHaptic(20);
+      });
+    }
+
+    if (this.dom.mobileSpeedBtn) {
+      this.dom.mobileSpeedBtn.addEventListener('click', () => {
+        const speeds = [200, 80, 40, 20];
+        const names = { 200: 'Chill', 80: 'Normal', 40: 'Turbo', 20: 'Hyper' };
+        const nextIdx = (speeds.indexOf(this.speed) + 1) % speeds.length;
+        const nextSpeed = speeds[nextIdx];
+        this.setSpeed(nextSpeed);
+        this.dom.mobileSpeedLabel.textContent = `⚡ ${names[nextSpeed]}`;
+        this.triggerHaptic(12);
+      });
+    }
+
+    if (this.dom.mobileSensitivityBtn) {
+      this.dom.mobileSensitivityBtn.addEventListener('click', () => {
+        this.cycleSensitivity();
+      });
+    }
+
+    if (this.dom.dpadCenterBtn) {
+      this.dom.dpadCenterBtn.addEventListener('click', () => {
+        this.togglePause();
+        this.triggerHaptic(15);
+      });
+    }
 
     // Toggles
     this.dom.toggleAiPath.addEventListener('change', (e) => {
@@ -299,15 +357,25 @@ class SnakeApp {
       this.particlesEnabled = e.target.checked;
     });
 
-    // Zero-Latency Touch D-Pad with Pointer/Touch Events
+    // Zero-Latency Touch D-Pad with Pointer & Touch Events
     const bindTouchButton = (btn, direction) => {
+      if (!btn) return;
       const handlePress = (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        btn.classList.add('pressed');
         this.sendDirection(direction);
-        this.triggerHaptic(12);
+        this.triggerHaptic(14);
       };
+      const handleRelease = () => {
+        btn.classList.remove('pressed');
+      };
+
+      btn.addEventListener('pointerdown', handlePress);
+      btn.addEventListener('pointerup', handleRelease);
+      btn.addEventListener('pointercancel', handleRelease);
       btn.addEventListener('touchstart', handlePress, { passive: false });
-      btn.addEventListener('mousedown', handlePress);
+      btn.addEventListener('touchend', handleRelease, { passive: true });
     };
 
     bindTouchButton(this.dom.dpadUp, 'UP');
@@ -316,83 +384,135 @@ class SnakeApp {
     bindTouchButton(this.dom.dpadRight, 'RIGHT');
   }
 
+  // --- Mobile Sensitivity Switcher ---
+  cycleSensitivity() {
+    if (this.sensitivityLevel === 'ultra') {
+      this.sensitivityLevel = 'normal';
+      this.swipeThreshold = 18;
+      this.dom.mobileSensitivityLabel.textContent = '🎯 Normal Touch';
+    } else if (this.sensitivityLevel === 'normal') {
+      this.sensitivityLevel = 'high';
+      this.swipeThreshold = 10;
+      this.dom.mobileSensitivityLabel.textContent = '🎯 High Touch';
+    } else {
+      this.sensitivityLevel = 'ultra';
+      this.swipeThreshold = 6;
+      this.dom.mobileSensitivityLabel.textContent = '⚡ Ultra Touch';
+    }
+    this.triggerHaptic(15);
+  }
+
   // --- Haptic Feedback Helper ---
-  triggerHaptic(ms = 10) {
+  triggerHaptic(ms = 12) {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
         navigator.vibrate(ms);
       } catch (e) {
-        // Haptic not allowed/supported
+        // Haptic unsupported
       }
     }
   }
 
-  // --- High-Sensitivity Continuous Swipe Gestures ---
+  // --- Ultra-Sensitive Continuous Swipe & Gesture Engine ---
   setupSwipeGestures() {
-    const target = this.canvas;
-    const swipeSensitivity = 12; // Ultra-responsive threshold in pixels
+    const target = this.dom.canvasWrapper || this.canvas;
+    if (!target) return;
 
-    target.addEventListener(
-      'touchstart',
-      (e) => {
-        if (e.touches.length === 1) {
-          const touch = e.touches[0];
-          this.touchStartX = touch.clientX;
-          this.touchStartY = touch.clientY;
-          this.touchActive = true;
+    const startTouch = (clientX, clientY) => {
+      this.touchStartX = clientX;
+      this.touchStartY = clientY;
+      this.touchActive = true;
+    };
+
+    const moveTouch = (clientX, clientY, e) => {
+      if (!this.touchActive) return;
+      if (e && e.cancelable) e.preventDefault();
+
+      const deltaX = clientX - this.touchStartX;
+      const deltaY = clientY - this.touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (Math.max(absX, absY) >= this.swipeThreshold) {
+        if (this.dom.swipeHint) {
+          this.dom.swipeHint.classList.add('hidden');
         }
-      },
-      { passive: true }
-    );
 
-    target.addEventListener(
-      'touchmove',
-      (e) => {
-        if (!this.touchActive || e.touches.length !== 1) return;
-        e.preventDefault(); // Prevent screen bounce/scrolling
-
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - this.touchStartX;
-        const deltaY = touch.clientY - this.touchStartY;
-        const absX = Math.abs(deltaX);
-        const absY = Math.abs(deltaY);
-
-        if (Math.max(absX, absY) >= swipeSensitivity) {
-          if (this.dom.swipeHint) {
-            this.dom.swipeHint.classList.add('hidden');
-          }
-
-          if (absX > absY) {
-            this.sendDirection(deltaX > 0 ? 'RIGHT' : 'LEFT');
-          } else {
-            this.sendDirection(deltaY > 0 ? 'DOWN' : 'UP');
-          }
-
-          this.triggerHaptic(10);
-
-          // Reset origin to current touch position for instant continuous turning!
-          this.touchStartX = touch.clientX;
-          this.touchStartY = touch.clientY;
+        let dir = 'RIGHT';
+        if (absX > absY) {
+          dir = deltaX > 0 ? 'RIGHT' : 'LEFT';
+        } else {
+          dir = deltaY > 0 ? 'DOWN' : 'UP';
         }
-      },
-      { passive: false }
-    );
 
-    target.addEventListener(
-      'touchend',
-      (e) => {
-        this.touchActive = false;
-      },
-      { passive: true }
-    );
+        this.sendDirection(dir);
+        this.triggerHaptic(10);
+        this.showGestureRipple(clientX, clientY, dir);
 
-    target.addEventListener(
-      'touchcancel',
-      () => {
-        this.touchActive = false;
-      },
-      { passive: true }
-    );
+        // Reset origin immediately to allow fluid continuous corner turns!
+        this.touchStartX = clientX;
+        this.touchStartY = clientY;
+      }
+    };
+
+    const endTouch = () => {
+      this.touchActive = false;
+      if (this.dom.gestureIndicator) {
+        this.dom.gestureIndicator.classList.add('hidden');
+      }
+    };
+
+    // Touch events on canvas and wrapper
+    target.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        startTouch(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    target.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1) {
+        moveTouch(e.touches[0].clientX, e.touches[0].clientY, e);
+      }
+    }, { passive: false });
+
+    target.addEventListener('touchend', endTouch, { passive: true });
+    target.addEventListener('touchcancel', endTouch, { passive: true });
+
+    // Pointer events for desktop drag / mouse swipe
+    target.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.buttons !== 1) return;
+      startTouch(e.clientX, e.clientY);
+    });
+
+    target.addEventListener('pointermove', (e) => {
+      if (this.touchActive) {
+        moveTouch(e.clientX, e.clientY, e);
+      }
+    });
+
+    target.addEventListener('pointerup', endTouch);
+    target.addEventListener('pointercancel', endTouch);
+  }
+
+  showGestureRipple(clientX, clientY, direction) {
+    const indicator = this.dom.gestureIndicator;
+    const wrapper = this.dom.canvasWrapper;
+    if (!indicator || !wrapper) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    const relX = clientX - rect.left;
+    const relY = clientY - rect.top;
+
+    if (relX >= 0 && relX <= rect.width && relY >= 0 && relY <= rect.height) {
+      indicator.style.left = `${relX}px`;
+      indicator.style.top = `${relY}px`;
+      indicator.classList.remove('hidden');
+
+      clearTimeout(this._indicatorTimeout);
+      this._indicatorTimeout = setTimeout(() => {
+        indicator.classList.add('hidden');
+      }, 220);
+    }
   }
 
   handleKeyDown(e) {
@@ -689,6 +809,13 @@ class SnakeApp {
     this.dom.pauseBanner.classList.toggle('hidden', !state.paused);
     this.dom.pauseBtnIcon.textContent = state.paused ? '▶️' : '⏸️';
     this.dom.pauseBtnText.textContent = state.paused ? 'Resume' : 'Pause';
+
+    if (this.dom.mobilePauseIcon) {
+      this.dom.mobilePauseIcon.textContent = state.paused ? '▶️' : '⏸️';
+    }
+    if (this.dom.mobilePauseLabel) {
+      this.dom.mobilePauseLabel.textContent = state.paused ? 'Resume' : 'Pause';
+    }
 
     if (state.state === 'DEAD' || state.state === 'FULL') {
       this.showGameOverModal(state);

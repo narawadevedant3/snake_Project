@@ -135,10 +135,30 @@
             <small>Tap canvas or press Space</small>
           </div>
 
+          <!-- Touch Gesture Direction Indicator Visual -->
+          <div class="gesture-indicator hidden" id="gestureIndicator"></div>
+
           <!-- Mobile Swipe Hint -->
           <div class="swipe-hint" id="swipeHint">
-            <span>👆 Swipe anywhere on screen to steer</span>
+            <span>⚡ Swipe or use D-Pad to steer</span>
           </div>
+        </div>
+
+        <!-- Mobile In-Game Quick Action Bar -->
+        <div class="mobile-quick-bar" id="mobileQuickBar">
+          <button class="mobile-quick-btn" id="mobilePauseBtn" aria-label="Pause or Resume">
+            <span id="mobilePauseIcon">⏸️</span>
+            <span id="mobilePauseLabel">Pause</span>
+          </button>
+          <button class="mobile-quick-btn highlight" id="mobileRestartBtn" aria-label="Restart Game">
+            <span>🔄 Restart</span>
+          </button>
+          <button class="mobile-quick-btn" id="mobileSpeedBtn" aria-label="Cycle Speed">
+            <span id="mobileSpeedLabel">⚡ Normal</span>
+          </button>
+          <button class="mobile-quick-btn" id="mobileSensitivityBtn" aria-label="Touch Sensitivity">
+            <span id="mobileSensitivityLabel">🎯 High Touch</span>
+          </button>
         </div>
 
         <!-- Touch D-Pad for Phone Screens -->
@@ -146,7 +166,7 @@
           <button class="dpad-btn up" id="dpadUp" aria-label="Up">▲</button>
           <div class="dpad-middle">
             <button class="dpad-btn left" id="dpadLeft" aria-label="Left">◀</button>
-            <div class="dpad-center">🎮</div>
+            <div class="dpad-center" id="dpadCenterBtn">🎮</div>
             <button class="dpad-btn right" id="dpadRight" aria-label="Right">▶</button>
           </div>
           <button class="dpad-btn down" id="dpadDown" aria-label="Down">▼</button>
