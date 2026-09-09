@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+# pyrefly: ignore [missing-import]
 from src.agents.base import Agent
 from src.cell import CellType
 from src.db import add_score, get_high_score, get_top_scores, init_db
