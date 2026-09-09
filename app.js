@@ -299,16 +299,38 @@ class SnakeApp {
       this.particlesEnabled = e.target.checked;
     });
 
-    // Touch D-Pad
-    this.dom.dpadUp.addEventListener('click', () => this.sendDirection('UP'));
-    this.dom.dpadDown.addEventListener('click', () => this.sendDirection('DOWN'));
-    this.dom.dpadLeft.addEventListener('click', () => this.sendDirection('LEFT'));
-    this.dom.dpadRight.addEventListener('click', () => this.sendDirection('RIGHT'));
+    // Zero-Latency Touch D-Pad with Pointer/Touch Events
+    const bindTouchButton = (btn, direction) => {
+      const handlePress = (e) => {
+        e.preventDefault();
+        this.sendDirection(direction);
+        this.triggerHaptic(12);
+      };
+      btn.addEventListener('touchstart', handlePress, { passive: false });
+      btn.addEventListener('mousedown', handlePress);
+    };
+
+    bindTouchButton(this.dom.dpadUp, 'UP');
+    bindTouchButton(this.dom.dpadDown, 'DOWN');
+    bindTouchButton(this.dom.dpadLeft, 'LEFT');
+    bindTouchButton(this.dom.dpadRight, 'RIGHT');
   }
 
-  // --- Phone Screen Touch Swipe Gestures ---
+  // --- Haptic Feedback Helper ---
+  triggerHaptic(ms = 10) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(ms);
+      } catch (e) {
+        // Haptic not allowed/supported
+      }
+    }
+  }
+
+  // --- High-Sensitivity Continuous Swipe Gestures ---
   setupSwipeGestures() {
     const target = this.canvas;
+    const swipeSensitivity = 12; // Ultra-responsive threshold in pixels
 
     target.addEventListener(
       'touchstart',
@@ -317,6 +339,7 @@ class SnakeApp {
           const touch = e.touches[0];
           this.touchStartX = touch.clientX;
           this.touchStartY = touch.clientY;
+          this.touchActive = true;
         }
       },
       { passive: true }
@@ -325,8 +348,32 @@ class SnakeApp {
     target.addEventListener(
       'touchmove',
       (e) => {
-        // Prevent bounce scrolling when interacting with game canvas
-        e.preventDefault();
+        if (!this.touchActive || e.touches.length !== 1) return;
+        e.preventDefault(); // Prevent screen bounce/scrolling
+
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = touch.clientY - this.touchStartY;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+
+        if (Math.max(absX, absY) >= swipeSensitivity) {
+          if (this.dom.swipeHint) {
+            this.dom.swipeHint.classList.add('hidden');
+          }
+
+          if (absX > absY) {
+            this.sendDirection(deltaX > 0 ? 'RIGHT' : 'LEFT');
+          } else {
+            this.sendDirection(deltaY > 0 ? 'DOWN' : 'UP');
+          }
+
+          this.triggerHaptic(10);
+
+          // Reset origin to current touch position for instant continuous turning!
+          this.touchStartX = touch.clientX;
+          this.touchStartY = touch.clientY;
+        }
       },
       { passive: false }
     );
@@ -334,26 +381,15 @@ class SnakeApp {
     target.addEventListener(
       'touchend',
       (e) => {
-        if (e.changedTouches.length === 1) {
-          const touch = e.changedTouches[0];
-          const deltaX = touch.clientX - this.touchStartX;
-          const deltaY = touch.clientY - this.touchStartY;
-          const absX = Math.abs(deltaX);
-          const absY = Math.abs(deltaY);
+        this.touchActive = false;
+      },
+      { passive: true }
+    );
 
-          if (Math.max(absX, absY) > this.swipeThreshold) {
-            // Hide swipe hint after user successfully swipes
-            if (this.dom.swipeHint) {
-              this.dom.swipeHint.classList.add('hidden');
-            }
-
-            if (absX > absY) {
-              this.sendDirection(deltaX > 0 ? 'RIGHT' : 'LEFT');
-            } else {
-              this.sendDirection(deltaY > 0 ? 'DOWN' : 'UP');
-            }
-          }
-        }
+    target.addEventListener(
+      'touchcancel',
+      () => {
+        this.touchActive = false;
       },
       { passive: true }
     );
