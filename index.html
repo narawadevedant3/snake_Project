@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Snake AI Arena - FastAPI & SQLite</title>
+  <meta name="description" content="Cyberpunk Snake Game with FastAPI backend, real-time WebSockets, SQLite High Scores Database, and Mobile Swipe Controls.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Ambient Glow Elements -->
+  <div class="app-background">
+    <div class="glow-orb glow-1"></div>
+    <div class="glow-orb glow-2"></div>
+    <div class="glow-orb glow-3"></div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="logo-icon">🐍</span>
+          <div>
+            <h1 class="app-title">SNAKE <span class="accent-text">ARENA</span></h1>
+            <p class="app-subtitle">FastAPI &bull; SQLite</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="mode-pill" id="activeModePill">
+          <span class="pulse-dot"></span>
+          <span id="currentModeLabel">Graph AI</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="leaderboardBtn" class="pill-btn" title="View High Scores (H)">
+          <span>🏆 Scores</span>
+        </button>
+        <div class="status-badge" id="wsStatusBadge">
+          <span class="status-indicator"></span>
+          <span id="wsStatusText">Live</span>
+        </div>
+        <button id="soundToggleBtn" class="icon-btn" title="Toggle Sound (M)" aria-label="Toggle Sound">
+          <span id="soundIcon">🔊</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Left / Top Stats Dashboard -->
+      <section class="stats-panel">
+        <div class="stat-card primary">
+          <span class="stat-label">CURRENT SCORE</span>
+          <div class="stat-val-group">
+            <span class="stat-value" id="statScore">3</span>
+            <span class="stat-max" id="statMaxScore">/ 36</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="scoreProgressBar" style="width: 8%;"></div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">HIGH SCORE</span>
+          <span class="stat-value highlight" id="statHighScore">3</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">MOVES</span>
+          <span class="stat-value" id="statMoves">0</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">TIME</span>
+          <span class="stat-value" id="statTime">0.0s</span>
+        </div>
+      </section>
+
+      <!-- Center Game Canvas Container -->
+      <section class="game-stage">
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="gameCanvas" width="480" height="480"></canvas>
+          
+          <!-- Game Over / Victory Modal -->
+          <div class="overlay-modal hidden" id="gameOverModal">
+            <div class="modal-card">
+              <div class="modal-icon" id="modalIcon">💀</div>
+              <h2 class="modal-title" id="modalTitle">GAME OVER</h2>
+              <p class="modal-desc" id="modalDesc">Snake collided with a barrier or tail.</p>
+              
+              <div class="modal-stats">
+                <div class="modal-stat">
+                  <span>Score</span>
+                  <strong id="modalFinalScore">0</strong>
+                </div>
+                <div class="modal-stat">
+                  <span>Moves</span>
+                  <strong id="modalFinalMoves">0</strong>
+                </div>
+                <div class="modal-stat">
+                  <span>Time</span>
+                  <strong id="modalFinalTime">0.0s</strong>
+                </div>
+              </div>
+
+              <!-- Save Score to SQLite DB -->
+              <form class="save-score-form" id="saveScoreForm">
+                <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="15" autocomplete="off" required>
+                <button type="submit" class="action-btn secondary-highlight" id="saveScoreBtn">
+                  <span>💾 Save Score</span>
+                </button>
+              </form>
+              <div class="save-feedback hidden" id="saveFeedback">✅ Score saved to database!</div>
+
+              <button class="action-btn primary large" id="modalRestartBtn">
+                <span>🔄 Play Again (R)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pause Overlay -->
+          <div class="pause-banner hidden" id="pauseBanner">
+            <span>⏸️ GAME PAUSED</span>
+            <small>Tap canvas or press Space</small>
+          </div>
+
+          <!-- Mobile Swipe Hint -->
+          <div class="swipe-hint" id="swipeHint">
+            <span>👆 Swipe anywhere on screen to steer</span>
+          </div>
+        </div>
+
+        <!-- Touch D-Pad for Phone Screens -->
+        <div class="touch-controls" id="touchControls">
+          <button class="dpad-btn up" id="dpadUp" aria-label="Up">▲</button>
+          <div class="dpad-middle">
+            <button class="dpad-btn left" id="dpadLeft" aria-label="Left">◀</button>
+            <div class="dpad-center">🎮</div>
+            <button class="dpad-btn right" id="dpadRight" aria-label="Right">▶</button>
+          </div>
+          <button class="dpad-btn down" id="dpadDown" aria-label="Down">▼</button>
+        </div>
+      </section>
+
+      <!-- Right Control Panel -->
+      <section class="control-panel">
+        <!-- Mode Switcher -->
+        <div class="panel-section">
+          <h3 class="section-title">GAME MODE</h3>
+          <div class="mode-selector-grid">
+            <button class="mode-card" data-mode="human" id="modeHumanBtn">
+              <span class="mode-icon">👤</span>
+              <div class="mode-info">
+                <strong>Human Player</strong>
+                <small>Swipe / D-Pad / WASD</small>
+              </div>
+            </button>
+
+            <button class="mode-card active" data-mode="graph" id="modeGraphBtn">
+              <span class="mode-icon">🧠</span>
+              <div class="mode-info">
+                <strong>Graph AI</strong>
+                <small>Hamiltonian Pathfinding</small>
+              </div>
+            </button>
+
+            <button class="mode-card" data-mode="rl" id="modeRlBtn">
+              <span class="mode-icon">🤖</span>
+              <div class="mode-info">
+                <strong>RL Agent (DQN)</strong>
+                <small>Neural Network</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Speed & Simulation Controls -->
+        <div class="panel-section">
+          <div class="section-header-row">
+            <h3 class="section-title">TICK SPEED</h3>
+            <span class="speed-badge" id="speedLabel">80 ms</span>
+          </div>
+
+          <div class="slider-row">
+            <input type="range" id="speedSlider" min="20" max="300" step="10" value="80" class="custom-slider">
+          </div>
+
+          <div class="preset-speeds">
+            <button class="chip-btn" data-speed="200">Chill</button>
+            <button class="chip-btn active" data-speed="80">Normal</button>
+            <button class="chip-btn" data-speed="40">Turbo</button>
+            <button class="chip-btn" data-speed="20">Hyper</button>
+          </div>
+        </div>
+
+        <!-- Grid Size Selection -->
+        <div class="panel-section">
+          <h3 class="section-title">GRID SIZE</h3>
+          <div class="grid-presets">
+            <button class="grid-chip active" data-grid="6">6 × 6 <small>Classic</small></button>
+            <button class="grid-chip" data-grid="8">8 × 8</button>
+            <button class="grid-chip" data-grid="10">10 × 10</button>
+            <button class="grid-chip" data-grid="14">14 × 14 <small>Pro</small></button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="panel-section actions-section">
+          <div class="btn-group">
+            <button class="action-btn secondary" id="pauseBtn" title="Space">
+              <span id="pauseBtnIcon">⏸️</span>
+              <span id="pauseBtnText">Pause</span>
+            </button>
+            <button class="action-btn secondary" id="stepBtn" title="Step 1 tick">
+              <span>⏭️ Step</span>
+            </button>
+            <button class="action-btn primary" id="restartBtn" title="Restart (R)">
+              <span>🔄 Restart</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Toggles -->
+        <div class="panel-section toggles-section">
+          <label class="toggle-row">
+            <span>Show AI Path Trail</span>
+            <input type="checkbox" id="toggleAiPath" checked>
+            <span class="toggle-switch"></span>
+          </label>
+
+          <label class="toggle-row">
+            <span>Show Grid Lines</span>
+            <input type="checkbox" id="toggleGrid" checked>
+            <span class="toggle-switch"></span>
+          </label>
+
+          <label class="toggle-row">
+            <span>Particle FX</span>
+            <input type="checkbox" id="toggleParticles" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <!-- Leaderboard Modal -->
+    <div class="overlay-modal hidden" id="leaderboardModal">
+      <div class="modal-card leaderboard-card">
+        <div class="modal-header-row">
+          <div class="modal-title-group">
+            <span class="modal-icon small">🏆</span>
+            <h2 class="modal-title">HIGH SCORES</h2>
+          </div>
+          <button class="close-btn" id="closeLeaderboardBtn">&times;</button>
+        </div>
+
+        <div class="leaderboard-tabs">
+          <button class="lb-tab active" data-lbmode="all">All Modes</button>
+          <button class="lb-tab" data-lbmode="human">👤 Human</button>
+          <button class="lb-tab" data-lbmode="graph">🧠 Graph AI</button>
+        </div>
+
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Mode</th>
+                <th>Grid</th>
+                <th>Score</th>
+                <th>Moves</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardTableBody">
+              <tr>
+                <td colspan="6" class="table-empty">Loading scores...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="key-hints">
+        <span class="key-badge"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Swipe</kbd> Steer</span>
+        <span class="key-badge"><kbd>Space</kbd> Pause</span>
+        <span class="key-badge"><kbd>R</kbd> Restart</span>
+        <span class="key-badge"><kbd>H</kbd> High Scores</span>
+      </div>
+      <div class="footer-credit">
+        FastAPI &bull; SQLite &bull; High-DPI Canvas &bull; Touch Ready
+      </div>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

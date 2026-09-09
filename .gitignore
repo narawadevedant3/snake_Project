@@ -1,7 +1,35 @@
+# Python Environments & Bytecode
+.venv/
 venv/
+env/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
 
+# Local SQLite Database & Storage
+*.db
+*.sqlite
+*.sqlite3
+snake_scores.db
+
+# Logs & Recordings
 logs/
-
+*.log
+*.gif
 rl_model.pt.tmp.*
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
