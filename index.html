@@ -6,289 +6,582 @@
   <meta name="theme-color" content="#090d16">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Snake AI Arena - FastAPI & SQLite</title>
-  <meta name="description" content="Cyberpunk Snake Game with FastAPI backend, real-time WebSockets, SQLite High Scores Database, and Mobile Swipe Controls.">
+  <title>Snake Arena - Futuristic Cyberpunk Game</title>
+  <meta name="description" content="Cyberpunk Snake Game with customizable themes, SQLite Leaderboard, AI Agents, and ultra-responsive phone touch controls.">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <!-- Ambient Glow Elements -->
-  <div class="app-background">
-    <div class="glow-orb glow-1"></div>
-    <div class="glow-orb glow-2"></div>
-    <div class="glow-orb glow-3"></div>
+<body class="theme-emerald">
+  <!-- Dynamic Ambient Glow Background -->
+  <div class="app-background" id="appBackground">
+    <div class="glow-orb glow-1" id="glow1"></div>
+    <div class="glow-orb glow-2" id="glow2"></div>
+    <div class="glow-orb glow-3" id="glow3"></div>
   </div>
 
-  <div class="app-layout">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-left">
-        <div class="logo-badge">
-          <span class="logo-icon">🐍</span>
-          <div>
-            <h1 class="app-title">SNAKE <span class="accent-text">ARENA</span></h1>
-            <p class="app-subtitle">FastAPI &bull; SQLite</p>
+  <div class="app-viewport">
+    <!-- ============================================== -->
+    <!-- 1. START / MAIN MENU SCREEN                   -->
+    <!-- ============================================== -->
+    <section class="screen-view active" id="startScreen">
+      <div class="start-container">
+        <!-- Top Status / Quick Actions -->
+        <div class="start-top-bar">
+          <div class="player-tag" id="startPlayerBadge" title="Click to change nickname">
+            <span class="player-avatar">👤</span>
+            <span class="player-name-display" id="startPlayerName">Player</span>
+            <span class="edit-hint">✏️</span>
           </div>
-        </div>
-      </div>
-
-      <div class="header-center">
-        <div class="mode-pill" id="activeModePill">
-          <span class="pulse-dot"></span>
-          <span id="currentModeLabel">Graph AI</span>
-        </div>
-      </div>
-
-      <div class="header-right">
-        <button id="leaderboardBtn" class="pill-btn" title="View High Scores (H)">
-          <span>🏆 Scores</span>
-        </button>
-        <div class="status-badge" id="wsStatusBadge">
-          <span class="status-indicator"></span>
-          <span id="wsStatusText">Live</span>
-        </div>
-        <button id="soundToggleBtn" class="icon-btn" title="Toggle Sound (M)" aria-label="Toggle Sound">
-          <span id="soundIcon">🔊</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="main-content">
-      <!-- Left / Top Stats Dashboard -->
-      <section class="stats-panel">
-        <div class="stat-card primary">
-          <span class="stat-label">CURRENT SCORE</span>
-          <div class="stat-val-group">
-            <span class="stat-value" id="statScore">3</span>
-            <span class="stat-max" id="statMaxScore">/ 36</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="scoreProgressBar" style="width: 8%;"></div>
+          <div class="start-actions-right">
+            <button id="startThemeQuickBtn" class="glass-icon-btn" title="Quick Theme Switcher" aria-label="Quick Theme Switcher">
+              <span>🎨</span>
+            </button>
+            <button id="startSoundBtn" class="glass-icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
+              <span id="startSoundIcon">🔊</span>
+            </button>
+            <button id="startSettingsBtn" class="glass-icon-btn" title="Game Settings" aria-label="Game Settings">
+              <span>⚙️</span>
+            </button>
           </div>
         </div>
 
-        <div class="stat-card">
-          <span class="stat-label">HIGH SCORE</span>
-          <span class="stat-value highlight" id="statHighScore">3</span>
+        <!-- Hero Title Banner -->
+        <div class="start-hero">
+          <div class="logo-orb-wrap">
+            <div class="logo-orb-glow"></div>
+            <span class="logo-big-icon">🐍</span>
+          </div>
+          <h1 class="start-title">SNAKE <span class="accent-text">ARENA</span></h1>
+          <p class="start-tagline">Cyberpunk &bull; AI Powered &bull; SQLite Leaderboard</p>
         </div>
 
-        <div class="stat-card">
-          <span class="stat-label">MOVES</span>
-          <span class="stat-value" id="statMoves">0</span>
+        <!-- High Score Preview Card -->
+        <div class="high-score-preview-card" id="startHighScoreCard">
+          <div class="hsp-left">
+            <span class="hsp-label">YOUR RECORD</span>
+            <span class="hsp-val" id="startHighScoreVal">3</span>
+          </div>
+          <div class="hsp-divider"></div>
+          <div class="hsp-right">
+            <span class="hsp-label">GLOBAL BEST</span>
+            <span class="hsp-val highlight" id="startGlobalHighVal">--</span>
+          </div>
+          <button id="startLeaderboardBtn" class="hsp-btn" title="View Full High Scores">
+            <span>🏆 Scores</span>
+          </button>
         </div>
 
-        <div class="stat-card">
-          <span class="stat-label">TIME</span>
-          <span class="stat-value" id="statTime">0.0s</span>
-        </div>
-      </section>
-
-      <!-- Center Game Canvas Container -->
-      <section class="game-stage">
-        <div class="canvas-wrapper" id="canvasWrapper">
-          <canvas id="gameCanvas" width="480" height="480"></canvas>
-          
-          <!-- Game Over / Victory Modal -->
-          <div class="overlay-modal hidden" id="gameOverModal">
-            <div class="modal-card">
-              <div class="modal-icon" id="modalIcon">💀</div>
-              <h2 class="modal-title" id="modalTitle">GAME OVER</h2>
-              <p class="modal-desc" id="modalDesc">Snake collided with a barrier or tail.</p>
-              
-              <div class="modal-stats">
-                <div class="modal-stat">
-                  <span>Score</span>
-                  <strong id="modalFinalScore">0</strong>
-                </div>
-                <div class="modal-stat">
-                  <span>Moves</span>
-                  <strong id="modalFinalMoves">0</strong>
-                </div>
-                <div class="modal-stat">
-                  <span>Time</span>
-                  <strong id="modalFinalTime">0.0s</strong>
-                </div>
+        <!-- Game Mode Selection Grid -->
+        <div class="mode-select-wrap">
+          <span class="section-micro-label">SELECT GAME MODE</span>
+          <div class="start-mode-grid">
+            <button class="start-mode-card active" data-mode="human" id="startModeHuman">
+              <div class="smc-header">
+                <span class="smc-icon">👤</span>
+                <span class="smc-badge">Default</span>
               </div>
+              <strong class="smc-title">Human Player</strong>
+              <small class="smc-desc">Swipe / D-Pad / WASD steering</small>
+            </button>
 
-              <!-- Save Score to SQLite DB -->
-              <form class="save-score-form" id="saveScoreForm">
-                <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="15" autocomplete="off" required>
-                <button type="submit" class="action-btn secondary-highlight" id="saveScoreBtn">
-                  <span>💾 Save Score</span>
-                </button>
-              </form>
-              <div class="save-feedback hidden" id="saveFeedback">✅ Score saved to database!</div>
+            <button class="start-mode-card" data-mode="graph" id="startModeGraph">
+              <div class="smc-header">
+                <span class="smc-icon">🧠</span>
+                <span class="smc-badge ai">AI</span>
+              </div>
+              <strong class="smc-title">Graph AI</strong>
+              <small class="smc-desc">Hamiltonian & Shortest Path</small>
+            </button>
 
-              <button class="action-btn primary large" id="modalRestartBtn">
-                <span>🔄 Play Again (R)</span>
-              </button>
+            <button class="start-mode-card" data-mode="rl" id="startModeRl">
+              <div class="smc-header">
+                <span class="smc-icon">🤖</span>
+                <span class="smc-badge rl">DQN</span>
+              </div>
+              <strong class="smc-title">RL Neural Net</strong>
+              <small class="smc-desc">Deep Reinforcement Learning</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Action Launch Buttons -->
+        <div class="start-launch-group">
+          <button class="play-btn-epic" id="mainPlayBtn" aria-label="Play Game">
+            <div class="play-btn-glow"></div>
+            <span class="play-icon">▶</span>
+            <span class="play-text">PLAY GAME</span>
+          </button>
+          <div class="start-sub-actions">
+            <button class="sub-action-btn" id="startOpenSettingsBtn">
+              <span>⚙️ Game Settings</span>
+            </button>
+            <button class="sub-action-btn" id="startOpenLeaderboardBtn">
+              <span>🏆 High Scores</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer Key Hints -->
+        <div class="start-footer-hints">
+          <span>🎮 Phone Swipe & Touch Ready &bull; Press <kbd>Space</kbd> or <kbd>Enter</kbd> to Play</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 2. DEDICATED SNAKE GAME SCREEN (IN-GAME)       -->
+    <!-- ============================================== -->
+    <section class="screen-view" id="gameScreen">
+      <div class="game-container">
+        <!-- In-Game Compact Header HUD -->
+        <header class="game-hud">
+          <div class="hud-left">
+            <button class="hud-icon-btn" id="hudHomeBtn" title="Back to Menu" aria-label="Back to Menu">
+              <span>🏠</span>
+            </button>
+            <div class="hud-mode-pill" id="hudModePill">
+              <span class="hud-pulse-dot"></span>
+              <span id="hudModeLabel">Human</span>
             </div>
           </div>
 
-          <!-- Pause Overlay -->
-          <div class="pause-banner hidden" id="pauseBanner">
-            <span>⏸️ GAME PAUSED</span>
-            <small>Tap canvas or press Space</small>
+          <div class="hud-center">
+            <div class="hud-stat-box primary">
+              <span class="hud-stat-lbl">SCORE</span>
+              <span class="hud-stat-num" id="hudScore">3</span>
+            </div>
+            <div class="hud-stat-box">
+              <span class="hud-stat-lbl">BEST</span>
+              <span class="hud-stat-num highlight" id="hudHighScore">3</span>
+            </div>
           </div>
 
-          <!-- Touch Gesture Direction Indicator Visual -->
-          <div class="gesture-indicator hidden" id="gestureIndicator"></div>
+          <div class="hud-right">
+            <button class="hud-icon-btn" id="hudPauseBtn" title="Pause / Resume (Space)" aria-label="Pause / Resume">
+              <span id="hudPauseIcon">⏸️</span>
+            </button>
+            <button class="hud-icon-btn" id="hudRestartBtn" title="Restart (R)" aria-label="Restart">
+              <span>🔄</span>
+            </button>
+            <button class="hud-icon-btn" id="hudSettingsBtn" title="Settings" aria-label="Settings">
+              <span>⚙️</span>
+            </button>
+            <button class="hud-icon-btn" id="hudSoundBtn" title="Sound (M)" aria-label="Sound">
+              <span id="hudSoundIcon">🔊</span>
+            </button>
+          </div>
+        </header>
 
-          <!-- Mobile Swipe Hint -->
-          <div class="swipe-hint" id="swipeHint">
-            <span>⚡ Swipe or use D-Pad to steer</span>
+        <!-- Secondary Info Bar (Moves, Timer & Progress) -->
+        <div class="game-sub-bar">
+          <div class="sub-stat-item">
+            <span class="sub-stat-title">MOVES:</span>
+            <strong id="hudMoves">0</strong>
+          </div>
+          <div class="sub-progress-wrap">
+            <div class="sub-progress-fill" id="hudProgressBar" style="width: 8%;"></div>
+          </div>
+          <div class="sub-stat-item">
+            <span class="sub-stat-title">TIME:</span>
+            <strong id="hudTime">0.0s</strong>
           </div>
         </div>
 
-        <!-- Mobile In-Game Quick Action Bar -->
-        <div class="mobile-quick-bar" id="mobileQuickBar">
-          <button class="mobile-quick-btn" id="mobilePauseBtn" aria-label="Pause or Resume">
-            <span id="mobilePauseIcon">⏸️</span>
-            <span id="mobilePauseLabel">Pause</span>
+        <!-- Game Stage Canvas -->
+        <div class="game-arena-stage">
+          <div class="canvas-box" id="canvasBox">
+            <canvas id="gameCanvas" width="480" height="480"></canvas>
+
+            <!-- In-Canvas Pause Overlay -->
+            <div class="canvas-pause-overlay hidden" id="canvasPauseOverlay">
+              <div class="pause-card">
+                <span class="pause-icon">⏸️</span>
+                <h3>GAME PAUSED</h3>
+                <p>Tap canvas or press Space to continue</p>
+                <button class="action-btn primary" id="pauseResumeBtn">
+                  <span>▶️ Resume Game</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Touch Gesture Direction Indicator Visual -->
+            <div class="gesture-indicator hidden" id="gestureIndicator"></div>
+
+            <!-- Mobile Swipe Visual Hint -->
+            <div class="swipe-floating-hint" id="swipeFloatingHint">
+              <span>⚡ Swipe anywhere or use D-Pad</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Quick Action Controls -->
+        <div class="game-quick-bar" id="gameQuickBar">
+          <button class="gqb-btn" id="gqbPauseBtn" aria-label="Pause">
+            <span id="gqbPauseIcon">⏸️</span>
+            <span id="gqbPauseLabel">Pause</span>
           </button>
-          <button class="mobile-quick-btn highlight" id="mobileRestartBtn" aria-label="Restart Game">
+          <button class="gqb-btn highlight" id="gqbRestartBtn" aria-label="Restart">
             <span>🔄 Restart</span>
           </button>
-          <button class="mobile-quick-btn" id="mobileSpeedBtn" aria-label="Cycle Speed">
-            <span id="mobileSpeedLabel">⚡ Normal</span>
+          <button class="gqb-btn" id="gqbSpeedBtn" aria-label="Cycle Speed">
+            <span id="gqbSpeedLabel">⚡ Normal</span>
           </button>
-          <button class="mobile-quick-btn" id="mobileSensitivityBtn" aria-label="Touch Sensitivity">
-            <span id="mobileSensitivityLabel">🎯 High Touch</span>
+          <button class="gqb-btn" id="gqbThemeBtn" aria-label="Quick Theme">
+            <span>🎨 Theme</span>
           </button>
         </div>
 
-        <!-- Touch D-Pad for Phone Screens -->
-        <div class="touch-controls" id="touchControls">
-          <button class="dpad-btn up" id="dpadUp" aria-label="Up">▲</button>
-          <div class="dpad-middle">
-            <button class="dpad-btn left" id="dpadLeft" aria-label="Left">◀</button>
-            <div class="dpad-center" id="dpadCenterBtn">🎮</div>
-            <button class="dpad-btn right" id="dpadRight" aria-label="Right">▶</button>
+        <!-- Mobile Zero-Latency Touch D-Pad -->
+        <div class="phone-dpad-container" id="phoneDpadContainer">
+          <button class="dpad-btn up" id="dpadUp" aria-label="Move Up">▲</button>
+          <div class="dpad-middle-row">
+            <button class="dpad-btn left" id="dpadLeft" aria-label="Move Left">◀</button>
+            <div class="dpad-center-btn" id="dpadCenterBtn" aria-label="Center Pause / Action">🎮</div>
+            <button class="dpad-btn right" id="dpadRight" aria-label="Move Right">▶</button>
           </div>
-          <button class="dpad-btn down" id="dpadDown" aria-label="Down">▼</button>
+          <button class="dpad-btn down" id="dpadDown" aria-label="Move Down">▼</button>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Right Control Panel -->
-      <section class="control-panel">
-        <!-- Mode Switcher -->
-        <div class="panel-section">
-          <h3 class="section-title">GAME MODE</h3>
-          <div class="mode-selector-grid">
-            <button class="mode-card" data-mode="human" id="modeHumanBtn">
-              <span class="mode-icon">👤</span>
-              <div class="mode-info">
-                <strong>Human Player</strong>
-                <small>Swipe / D-Pad / WASD</small>
+    <!-- ============================================== -->
+    <!-- 3. GAME OVER & HIGH SCORE SCREEN / MODAL       -->
+    <!-- ============================================== -->
+    <div class="overlay-modal hidden" id="gameOverModal">
+      <div class="modal-card end-game-card">
+        <div class="end-game-header">
+          <div class="modal-icon-glow" id="endGameIconGlow">
+            <span class="end-game-icon" id="modalIcon">💀</span>
+          </div>
+          <h2 class="modal-title" id="modalTitle">GAME OVER</h2>
+          <p class="modal-desc" id="modalDesc">Snake collided with a wall or tail.</p>
+        </div>
+
+        <!-- High Score Celebration Banner -->
+        <div class="new-record-badge hidden" id="newRecordBadge">
+          <span>🔥 NEW HIGH SCORE! 🔥</span>
+        </div>
+
+        <!-- End Game Stats Matrix -->
+        <div class="end-stats-grid">
+          <div class="end-stat-card primary">
+            <span class="esc-lbl">FINAL SCORE</span>
+            <strong class="esc-val" id="modalFinalScore">0</strong>
+          </div>
+          <div class="end-stat-card">
+            <span class="esc-lbl">HIGH SCORE</span>
+            <strong class="esc-val highlight" id="modalHighScoreRecord">0</strong>
+          </div>
+          <div class="end-stat-card">
+            <span class="esc-lbl">MOVES</span>
+            <strong class="esc-val" id="modalFinalMoves">0</strong>
+          </div>
+          <div class="end-stat-card">
+            <span class="esc-lbl">TIME</span>
+            <strong class="esc-val" id="modalFinalTime">0.0s</strong>
+          </div>
+        </div>
+
+        <!-- Save Score to SQLite DB Form -->
+        <form class="save-score-section" id="saveScoreForm">
+          <div class="save-input-group">
+            <input type="text" id="playerNameInput" placeholder="Your Nickname" maxlength="15" autocomplete="off" required>
+            <button type="submit" class="save-btn" id="saveScoreBtn">
+              <span>💾 Save Score</span>
+            </button>
+          </div>
+          <div class="save-feedback hidden" id="saveFeedback">✅ Score saved to SQLite Database!</div>
+        </form>
+
+        <!-- Inline Mini High Scores Preview -->
+        <div class="end-game-leaderboard">
+          <div class="egl-header">
+            <span>🏆 TOP ARENA SCORES</span>
+            <button type="button" class="text-link-btn" id="endViewFullScoresBtn">View Full Table &rarr;</button>
+          </div>
+          <div class="egl-table-wrap">
+            <table class="mini-score-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Player</th>
+                  <th>Mode</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody id="endGameScoresBody">
+                <tr><td colspan="4" class="table-loading">Loading top scores...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- End Game Action Options -->
+        <div class="end-game-actions">
+          <button class="action-btn primary large epic" id="modalRestartBtn">
+            <span>🔄 Play Again (R)</span>
+          </button>
+          <div class="end-sub-btn-group">
+            <button class="action-btn secondary" id="modalSettingsBtn">
+              <span>⚙️ Settings</span>
+            </button>
+            <button class="action-btn secondary" id="modalHomeBtn">
+              <span>🏠 Main Menu</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 4. SETTINGS & THEME CUSTOMIZER MODAL           -->
+    <!-- ============================================== -->
+    <div class="overlay-modal hidden" id="settingsModal">
+      <div class="modal-card settings-card">
+        <div class="modal-header-row">
+          <div class="modal-title-group">
+            <span class="modal-icon small">⚙️</span>
+            <h2 class="modal-title">GAME SETTINGS</h2>
+          </div>
+          <button class="close-btn" id="closeSettingsBtn" aria-label="Close Settings">&times;</button>
+        </div>
+
+        <div class="settings-scroll-area">
+          <!-- Section 1: Themes & Background Color -->
+          <div class="settings-group">
+            <div class="settings-group-title">
+              <span>🎨 THEME & BACKGROUND COLOR</span>
+              <small class="settings-saved-hint" id="themeSavedHint">Auto-Saved</small>
+            </div>
+            
+            <div class="theme-palette-grid" id="themePaletteGrid">
+              <button class="theme-chip active" data-theme="emerald">
+                <span class="theme-preview-dot emerald"></span>
+                <span>Cyber Emerald</span>
+              </button>
+              <button class="theme-chip" data-theme="violet">
+                <span class="theme-preview-dot violet"></span>
+                <span>Synthwave Violet</span>
+              </button>
+              <button class="theme-chip" data-theme="ocean">
+                <span class="theme-preview-dot ocean"></span>
+                <span>Ocean Abyss</span>
+              </button>
+              <button class="theme-chip" data-theme="crimson">
+                <span class="theme-preview-dot crimson"></span>
+                <span>Sunset Crimson</span>
+              </button>
+              <button class="theme-chip" data-theme="matrix">
+                <span class="theme-preview-dot matrix"></span>
+                <span>Matrix Green</span>
+              </button>
+              <button class="theme-chip" data-theme="neon">
+                <span class="theme-preview-dot neon"></span>
+                <span>Cyberpunk Pink</span>
+              </button>
+              <button class="theme-chip" data-theme="gold">
+                <span class="theme-preview-dot gold"></span>
+                <span>Royal Gold</span>
+              </button>
+              <button class="theme-chip" data-theme="oled">
+                <span class="theme-preview-dot oled"></span>
+                <span>Pitch Black OLED</span>
+              </button>
+            </div>
+
+            <!-- Custom Background Color Picker -->
+            <div class="custom-color-row">
+              <label for="customBgColorInput">Custom Background Color:</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="customBgColorInput" value="#090d16">
+                <span class="color-code-display" id="customColorCode">#090d16</span>
               </div>
-            </button>
+            </div>
+          </div>
 
-            <button class="mode-card active" data-mode="graph" id="modeGraphBtn">
-              <span class="mode-icon">🧠</span>
-              <div class="mode-info">
-                <strong>Graph AI</strong>
-                <small>Hamiltonian Pathfinding</small>
+          <!-- Section 2: Snake Skin & Food Aesthetics -->
+          <div class="settings-group">
+            <div class="settings-group-title">
+              <span>🐍 SNAKE SKIN & FOOD AESTHETICS</span>
+            </div>
+
+            <div class="settings-sub-row">
+              <span class="sub-label">Snake Skin:</span>
+              <div class="chip-select-group" id="snakeSkinGroup">
+                <button class="select-chip active" data-skin="emerald">Emerald</button>
+                <button class="select-chip" data-skin="cyan">Cyan</button>
+                <button class="select-chip" data-skin="gold">Gold</button>
+                <button class="select-chip" data-skin="magenta">Magenta</button>
+                <button class="select-chip" data-skin="rainbow">Rainbow</button>
               </div>
-            </button>
+            </div>
 
-            <button class="mode-card" data-mode="rl" id="modeRlBtn">
-              <span class="mode-icon">🤖</span>
-              <div class="mode-info">
-                <strong>RL Agent (DQN)</strong>
-                <small>Neural Network</small>
+            <div class="settings-sub-row">
+              <span class="sub-label">Food Style:</span>
+              <div class="chip-select-group" id="foodStyleGroup">
+                <button class="select-chip active" data-food="orb">🟡 Glow Orb</button>
+                <button class="select-chip" data-food="apple">🍎 Apple</button>
+                <button class="select-chip" data-food="gem">💎 Gem</button>
+                <button class="select-chip" data-food="star">⭐ Star</button>
               </div>
-            </button>
+            </div>
+          </div>
+
+          <!-- Section 3: Gameplay, Speed & Grid Size -->
+          <div class="settings-group">
+            <div class="settings-group-title">
+              <span>⚡ GAMEPLAY & DIFFICULTY</span>
+            </div>
+
+            <div class="settings-sub-row">
+              <span class="sub-label">Grid Size:</span>
+              <div class="chip-select-group" id="settingsGridGroup">
+                <button class="select-chip active" data-grid="6">6 × 6</button>
+                <button class="select-chip" data-grid="8">8 × 8</button>
+                <button class="select-chip" data-grid="10">10 × 10</button>
+                <button class="select-chip" data-grid="12">12 × 12</button>
+                <button class="select-chip" data-grid="14">14 × 14</button>
+                <button class="select-chip" data-grid="16">16 × 16</button>
+              </div>
+            </div>
+
+            <div class="slider-settings-row">
+              <div class="slider-header-wrap">
+                <span class="sub-label">Tick Speed:</span>
+                <span class="slider-val-badge" id="settingsSpeedBadge">80 ms</span>
+              </div>
+              <input type="range" id="settingsSpeedSlider" min="20" max="250" step="5" value="80" class="custom-slider">
+              <div class="preset-speed-chips" id="settingsSpeedChips">
+                <button class="speed-chip" data-speed="200">Chill (200ms)</button>
+                <button class="speed-chip active" data-speed="80">Normal (80ms)</button>
+                <button class="speed-chip" data-speed="50">Fast (50ms)</button>
+                <button class="speed-chip" data-speed="30">Turbo (30ms)</button>
+                <button class="speed-chip" data-speed="20">Hyper (20ms)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Phone & Controls Settings -->
+          <div class="settings-group">
+            <div class="settings-group-title">
+              <span>📱 PHONE & CONTROLS</span>
+            </div>
+
+            <div class="settings-sub-row">
+              <span class="sub-label">Touch Controls Layout:</span>
+              <div class="chip-select-group" id="controlLayoutGroup">
+                <button class="select-chip active" data-layout="both">Swipe + D-Pad</button>
+                <button class="select-chip" data-layout="swipe">Swipe Only</button>
+                <button class="select-chip" data-layout="dpad">D-Pad Only</button>
+              </div>
+            </div>
+
+            <div class="settings-sub-row">
+              <span class="sub-label">Swipe Sensitivity:</span>
+              <div class="chip-select-group" id="swipeSensitivityGroup">
+                <button class="select-chip" data-sensitivity="ultra">⚡ Ultra (6px)</button>
+                <button class="select-chip active" data-sensitivity="high">🎯 High (10px)</button>
+                <button class="select-chip" data-sensitivity="normal">Normal (18px)</button>
+              </div>
+            </div>
+
+            <label class="setting-toggle-row">
+              <div>
+                <strong>Haptic Vibration Feedback</strong>
+                <small>Tactile clicks on phone steering</small>
+              </div>
+              <input type="checkbox" id="toggleHaptics" checked>
+              <span class="toggle-switch"></span>
+            </label>
+
+            <label class="setting-toggle-row">
+              <div>
+                <strong>Sound Effects (Web Audio Synthesizer)</strong>
+                <small>Eat chimes, death explosions, victory</small>
+              </div>
+              <input type="checkbox" id="toggleSound" checked>
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+
+          <!-- Section 5: Visual FX -->
+          <div class="settings-group">
+            <div class="settings-group-title">
+              <span>✨ VISUAL EFFECTS</span>
+            </div>
+
+            <label class="setting-toggle-row">
+              <div>
+                <strong>Particle Bursts</strong>
+                <small>Exploding sparks on food consumption</small>
+              </div>
+              <input type="checkbox" id="toggleParticles" checked>
+              <span class="toggle-switch"></span>
+            </label>
+
+            <label class="setting-toggle-row">
+              <div>
+                <strong>Grid Lines</strong>
+                <small>Cyber grid overlay on game canvas</small>
+              </div>
+              <input type="checkbox" id="toggleGrid" checked>
+              <span class="toggle-switch"></span>
+            </label>
+
+            <label class="setting-toggle-row">
+              <div>
+                <strong>AI Path Trail</strong>
+                <small>Visualize Hamiltonian/BFS shortest route</small>
+              </div>
+              <input type="checkbox" id="toggleAiPath" checked>
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+
+          <!-- Section 6: User Profile -->
+          <div class="settings-group">
+            <div class="settings-group-title">
+              <span>👤 USER PROFILE</span>
+            </div>
+            <div class="settings-input-row">
+              <label for="settingsNicknameInput">Default Player Nickname:</label>
+              <input type="text" id="settingsNicknameInput" placeholder="Your Name" maxlength="15" autocomplete="off">
+            </div>
           </div>
         </div>
 
-        <!-- Speed & Simulation Controls -->
-        <div class="panel-section">
-          <div class="section-header-row">
-            <h3 class="section-title">TICK SPEED</h3>
-            <span class="speed-badge" id="speedLabel">80 ms</span>
-          </div>
-
-          <div class="slider-row">
-            <input type="range" id="speedSlider" min="20" max="300" step="10" value="80" class="custom-slider">
-          </div>
-
-          <div class="preset-speeds">
-            <button class="chip-btn" data-speed="200">Chill</button>
-            <button class="chip-btn active" data-speed="80">Normal</button>
-            <button class="chip-btn" data-speed="40">Turbo</button>
-            <button class="chip-btn" data-speed="20">Hyper</button>
-          </div>
+        <div class="settings-footer">
+          <button class="action-btn secondary" id="resetSettingsBtn">
+            <span>🔄 Reset to Default</span>
+          </button>
+          <button class="action-btn primary" id="saveSettingsDoneBtn">
+            <span>✅ Done</span>
+          </button>
         </div>
+      </div>
+    </div>
 
-        <!-- Grid Size Selection -->
-        <div class="panel-section">
-          <h3 class="section-title">GRID SIZE</h3>
-          <div class="grid-presets">
-            <button class="grid-chip active" data-grid="6">6 × 6 <small>Classic</small></button>
-            <button class="grid-chip" data-grid="8">8 × 8</button>
-            <button class="grid-chip" data-grid="10">10 × 10</button>
-            <button class="grid-chip" data-grid="14">14 × 14 <small>Pro</small></button>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="panel-section actions-section">
-          <div class="btn-group">
-            <button class="action-btn secondary" id="pauseBtn" title="Space">
-              <span id="pauseBtnIcon">⏸️</span>
-              <span id="pauseBtnText">Pause</span>
-            </button>
-            <button class="action-btn secondary" id="stepBtn" title="Step 1 tick">
-              <span>⏭️ Step</span>
-            </button>
-            <button class="action-btn primary" id="restartBtn" title="Restart (R)">
-              <span>🔄 Restart</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Visual Toggles -->
-        <div class="panel-section toggles-section">
-          <label class="toggle-row">
-            <span>Show AI Path Trail</span>
-            <input type="checkbox" id="toggleAiPath" checked>
-            <span class="toggle-switch"></span>
-          </label>
-
-          <label class="toggle-row">
-            <span>Show Grid Lines</span>
-            <input type="checkbox" id="toggleGrid" checked>
-            <span class="toggle-switch"></span>
-          </label>
-
-          <label class="toggle-row">
-            <span>Particle FX</span>
-            <input type="checkbox" id="toggleParticles" checked>
-            <span class="toggle-switch"></span>
-          </label>
-        </div>
-      </section>
-    </main>
-
-    <!-- Leaderboard Modal -->
+    <!-- ============================================== -->
+    <!-- 5. LEADERBOARD / HIGH SCORES MODAL             -->
+    <!-- ============================================== -->
     <div class="overlay-modal hidden" id="leaderboardModal">
       <div class="modal-card leaderboard-card">
         <div class="modal-header-row">
           <div class="modal-title-group">
             <span class="modal-icon small">🏆</span>
-            <h2 class="modal-title">HIGH SCORES</h2>
+            <h2 class="modal-title">HIGH SCORES LEADERBOARD</h2>
           </div>
-          <button class="close-btn" id="closeLeaderboardBtn">&times;</button>
+          <button class="close-btn" id="closeLeaderboardBtn" aria-label="Close Leaderboard">&times;</button>
         </div>
 
         <div class="leaderboard-tabs">
           <button class="lb-tab active" data-lbmode="all">All Modes</button>
           <button class="lb-tab" data-lbmode="human">👤 Human</button>
           <button class="lb-tab" data-lbmode="graph">🧠 Graph AI</button>
+          <button class="lb-tab" data-lbmode="rl">🤖 RL Agent</button>
         </div>
 
         <div class="leaderboard-table-container">
@@ -301,30 +594,18 @@
                 <th>Grid</th>
                 <th>Score</th>
                 <th>Moves</th>
+                <th>Time</th>
               </tr>
             </thead>
             <tbody id="leaderboardTableBody">
               <tr>
-                <td colspan="6" class="table-empty">Loading scores...</td>
+                <td colspan="7" class="table-empty">Loading scores...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="app-footer">
-      <div class="key-hints">
-        <span class="key-badge"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Swipe</kbd> Steer</span>
-        <span class="key-badge"><kbd>Space</kbd> Pause</span>
-        <span class="key-badge"><kbd>R</kbd> Restart</span>
-        <span class="key-badge"><kbd>H</kbd> High Scores</span>
-      </div>
-      <div class="footer-credit">
-        FastAPI &bull; SQLite &bull; High-DPI Canvas &bull; Touch Ready
-      </div>
-    </footer>
   </div>
 
   <script src="/app.js"></script>
